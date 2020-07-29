@@ -5,7 +5,19 @@ Parameters:
   ProjectName:
     Description: Project Name for this demo
     Type: String
-    Default: tdedemo
+    Default: tde-demo
+  RepositoryName:
+    Description: Github Repository pipeline will be watching
+    Type: String
+    Default: tde-demo
+  GitHubOwner:
+    Description: Owner of github repo
+    Type: String
+    Default: abdaleverly
+  BranchName:
+    Description: Github branch name
+    Type: String
+    Default: master 
 
 Resources:
   ArtifactBucket:
@@ -55,7 +67,8 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Action:
+              - Effect: "Allow"
+                Action:
                   - s3:GetBucketVersioning
                   - s3:PutObject
                   - s3:GetObject
@@ -66,9 +79,81 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Action:
+              - Effect: "Allow"
+                Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource:
-                  - '*'
+                Resource: "*"
+  
+  PipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: '{{resolve:secretsmanager:GitHubToken:SecretString:token}}'
+      Filters:
+        - 
+          JsonPath: "$.ref"
+          MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref Pipeline
+      TargetAction: SourceAction
+      Name: PipelineWebhook
+      TargetPipelineVersion: !GetAtt Pipeline.Version
+      RegisterWithThirdParty: true
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt PipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              RunOrder: 1
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration: 
+                Owner: !Ref GitHubOwner
+                Repo: !Ref RepositoryName
+                Branch: !Ref BranchName
+                OAuthToken: '{{resolve:secretsmanager:GitHubToken:SecretString:token}}'
+                PollForSourceChanges: false
+        - Name: Build
+          Actions:
+            - Name: BuildApp
+              RunOrder: 2
+              InputArtifacts:
+                - Name: SourceOutput
+              ActionTypeId:
+                Category: Build
+                Provider: CodeBuild
+                Owner: AWS
+                Version: '1'
+              OutputArtifacts:
+                - Name: Build
+              Configuration:
+                ProjectName: !Ref BuildApp
+
+  BuildApp:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ProjectName}-Build
+      ServiceRole: !Ref PipelineServiceRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yaml
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/standard:4.0
