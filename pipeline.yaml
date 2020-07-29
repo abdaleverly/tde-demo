@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: TDE pipeline Demo
+
+Parameters:
+  ProjectName:
+    Description: Project Name for this demo
+    Type: String
+    Default: tdedemo
+
+Resources:
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+
+  ArtifactBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ArtifactBucket
+      PolicyDocument:
+        Statement:
+          - Action:
+            - s3:*
+            Effect: Allow
+            Resource:
+              - !GetAtt ArtifactBucket.Arn
+              - !Sub ${ArtifactBucket.Arn}/*
+            Principal:
+              AWS:
+                - !GetAtt PipelineServiceRole.Arn
+    
+  PipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-PipelineServiceRole
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+              Service:
+                - codepipeline.amazonaws.com
+                - codebuild.amazonaws.com
+      Policies:
+        - PolicyName: CodebuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - codebuild:*
+                Effect: Allow
+                Resource: "*"
+        - PolicyName: ArtifactBucketAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - s3:GetBucketVersioning
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                Resource:
+                  - !GetAtt ArtifactBucket.Arn
+        - PolicyName: CloudwatchLogAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - '*'
