@@ -192,6 +192,7 @@ Resources:
               Configuration:
                 ActionMode: CHANGE_SET_EXECUTE
                 Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM"
+                ChangeSetName: !Sub ${ProjectName}-ChangeSet
                 RoleArn: arn:aws:iam::313157432413:role/sam-app-cicd-PipelineDevCreateChangeSetRoleFFC4CBB-1BK072LEBC5E2
                 StackName: !Sub ${ProjectName}-${BranchName}-Dev
               # RoleArn: !Ref PipelineServiceRole.Arn
