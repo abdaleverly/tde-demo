@@ -5,11 +5,25 @@ phases:
       nodejs: 12
     commands:
       # Install sam cli
-      - echo ${ROLE_ARN}
+      - pip3 install --upgrade aws-sam-cli
+      - sam --version
+      - cd hello-world
+      - npm install
 
   pre_build:
     commands:
-      - echo "This is a test"
+      - npm run test
+
   build:
     commands:
-      - aws cloudformation package --template-file services/templates/app.yaml --s3-bucket "${SAM_BUCKET}" --output-template-file app-pkg-template.yml
+      - cd ..
+      - sam build
+  
+  post_build:
+    commands:
+      - sam package --s3-bucket $PACKAGE_BUCKET --output-template-file pkg-template.yml
+
+artifacts:
+  discard-paths: yes
+  files:
+    - pkg-template.yml
