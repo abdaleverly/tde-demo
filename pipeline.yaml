@@ -54,6 +54,8 @@ Resources:
               Service:
                 - codepipeline.amazonaws.com
                 - codebuild.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
       Policies:
         - PolicyName: CodebuildAccess
           PolicyDocument:
@@ -178,7 +180,21 @@ Resources:
                 # Temporary Workaround For Account Restriction
                 RoleArn: arn:aws:iam::313157432413:role/sam-app-cicd-PipelineDevCreateChangeSetRoleFFC4CBB-1BK072LEBC5E2
                 StackName: !Sub ${ProjectName}-${BranchName}-Dev
-                TemplatePath: Build::pkg-template.yaml
+                TemplatePath: Build::pkg-template.yml
+              # RoleArn: !Ref PipelineServiceRole.Arn
+            - Name: DeployChangeSet
+              RunOrder: 4
+              ActionTypeId:
+                Category: Deploy
+                Provider: CloudFormation
+                Owner: AWS
+                Version: '1'
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM"
+                RoleArn: arn:aws:iam::313157432413:role/sam-app-cicd-PipelineDevCreateChangeSetRoleFFC4CBB-1BK072LEBC5E2
+                StackName: !Sub ${ProjectName}-${BranchName}-Dev
+              # RoleArn: !Ref PipelineServiceRole.Arn
 
   BuildApp:
     Type: AWS::CodeBuild::Project
