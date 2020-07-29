@@ -160,4 +160,4 @@ Resources:
         EnvironmentVariables:
           - Name: SAM_BUCKET
             Type: PLAINTEXT
-            Value: !Sub '${ProjectName}-Demo-${AWS::AccountId}'
+            Value: !Ref ArtifactBucket
