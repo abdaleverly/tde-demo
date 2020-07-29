@@ -86,6 +86,24 @@ Resources:
                   - logs:PutLogEvents
                 Resource: "*"
   
+  PipelineDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-DeploymentRole
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+              Service:
+                - cloudformation.amazonaws.com
+                - codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws::policy/AdministratorAccess
+
   PipelineWebhook:
     Type: AWS::CodePipeline::Webhook
     Properties:
@@ -142,6 +160,24 @@ Resources:
                 - Name: Build
               Configuration:
                 ProjectName: !Ref BuildApp
+        - Name: Deploy
+          Actions:
+            - Name: CreateChangeSet
+              RunOrder: 3
+              InputArtifacts:
+                - Name: Build
+              ActionTypeId:
+                Category: Deploy
+                Provider: CloudFormation
+                Owner: AWS
+                Version: '1'
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM"
+                ChangeSetName: !Sub ${ProjectName}-ChangeSet
+                RoleArn: !Ref PipelineDeployRole
+                StackName: !Sub ${ProjectName}-${BranchName}-Dev
+                TemplatePath: Build::pkg-template.yaml
 
   BuildApp:
     Type: AWS::CodeBuild::Project
