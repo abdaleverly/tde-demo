@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: TDE pipeline Demo
+Description: TDE pipeline Demo v1
 
 Parameters:
   ProjectName:
