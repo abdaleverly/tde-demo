@@ -1,5 +1,8 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: TDE pipeline Demo v1
+# DISCLAIMER: This Cloudformation script is only for demo purposes and does not 
+# incorporate security best practices. Should not be used as-is in a live
+# environment
 
 Parameters:
   ProjectName:
@@ -13,13 +16,13 @@ Parameters:
   GitHubOwner:
     Description: Owner of github repo
     Type: String
-    Default: abdaleverly
   BranchName:
     Description: Github branch name
     Type: String
     Default: master 
 
 Resources:
+  # TODO: The contents of this bucket can be encrypted
   ArtifactBucket:
     Type: AWS::S3::Bucket
 
@@ -88,6 +91,7 @@ Resources:
                   - logs:PutLogEvents
                 Resource: "*"
   
+  # TODO: Restrict role using PoLP
   PipelineDeployRole:
     Type: AWS::IAM::Role
     Properties:
@@ -104,6 +108,7 @@ Resources:
                 - codebuild.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
+        ## TODO: Restrict access for this role further
         - arn:aws:iam::aws:policy/AdministratorAccess
 
   PipelineWebhook:
@@ -111,6 +116,7 @@ Resources:
     Properties:
       Authentication: GITHUB_HMAC
       AuthenticationConfiguration:
+        # Used Dynamic referencing to retrieve data from Secrets Manager
         SecretToken: '{{resolve:secretsmanager:GitHubToken:SecretString:token}}'
       Filters:
         - 
@@ -178,10 +184,9 @@ Resources:
                 Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM"
                 ChangeSetName: !Sub ${ProjectName}-ChangeSet
                 # Temporary Workaround For Account Restriction
-                RoleArn: arn:aws:iam::313157432413:role/sam-app-cicd-PipelineDevCreateChangeSetRoleFFC4CBB-1BK072LEBC5E2
+                RoleArn: !GetAtt PipelineDeployRole.Arn
                 StackName: !Sub ${ProjectName}-${BranchName}-Dev
                 TemplatePath: Build::pkg-template.yml
-              # RoleArn: !Ref PipelineServiceRole.Arn
             - Name: DeployChangeSet
               RunOrder: 4
               ActionTypeId:
@@ -193,9 +198,8 @@ Resources:
                 ActionMode: CHANGE_SET_EXECUTE
                 Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM"
                 ChangeSetName: !Sub ${ProjectName}-ChangeSet
-                RoleArn: arn:aws:iam::313157432413:role/sam-app-cicd-PipelineDevCreateChangeSetRoleFFC4CBB-1BK072LEBC5E2
+                RoleArn: !GetAtt PipelineDeployRole.Arn
                 StackName: !Sub ${ProjectName}-${BranchName}-Dev
-              # RoleArn: !Ref PipelineServiceRole.Arn
 
   BuildApp:
     Type: AWS::CodeBuild::Project
