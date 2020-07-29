@@ -21,7 +21,7 @@ phases:
   
   post_build:
     commands:
-      - sam package --s3-bucket $PACKAGE_BUCKET --output-template-file pkg-template.yml
+      - sam package --s3-bucket $SAM_BUCKET --output-template-file pkg-template.yml
 
 artifacts:
   discard-paths: yes
