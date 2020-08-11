@@ -19,7 +19,10 @@ Parameters:
   BranchName:
     Description: Github branch name
     Type: String
-    Default: master 
+    Default: master
+  SubscriptionEmail:
+    Description: Group email to subscribe for email notifications
+    Type: String
 
 Resources:
   # TODO: The contents of this bucket can be encrypted
@@ -128,6 +131,13 @@ Resources:
       TargetPipelineVersion: !GetAtt Pipeline.Version
       RegisterWithThirdParty: true
 
+  ApprovalNotification:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: !Ref SubscriptionEmail
+          Protocol: email
+
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -187,8 +197,17 @@ Resources:
                 RoleArn: !GetAtt PipelineDeployRole.Arn
                 StackName: !Sub ${ProjectName}-${BranchName}-Dev
                 TemplatePath: Build::pkg-template.yml
-            - Name: DeployChangeSet
+            - Name: Approval
               RunOrder: 4
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: '1'
+              Configuration:
+                NotificationArn: !Ref ApprovalNotification
+            - Name: DeployChangeSet
+              RunOrder: 5
               ActionTypeId:
                 Category: Deploy
                 Provider: CloudFormation
@@ -200,7 +219,6 @@ Resources:
                 ChangeSetName: !Sub ${ProjectName}-ChangeSet
                 RoleArn: !GetAtt PipelineDeployRole.Arn
                 StackName: !Sub ${ProjectName}-${BranchName}-Dev
-
   BuildApp:
     Type: AWS::CodeBuild::Project
     Properties:
