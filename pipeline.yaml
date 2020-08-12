@@ -219,6 +219,20 @@ Resources:
                 ChangeSetName: !Sub ${ProjectName}-ChangeSet
                 RoleArn: !GetAtt PipelineDeployRole.Arn
                 StackName: !Sub ${ProjectName}-${BranchName}-Dev
+        - Name: PostDeployTests
+          Actions:
+            - Name: IntegrationTests
+              RunOrder: 3
+              InputArtifacts:
+                - Name: Source
+              ActionTypeId:
+                Category: Test
+                Provider: CodeBuild
+                Owner: AWS
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref IntegrationTest
+
   BuildApp:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -229,6 +243,24 @@ Resources:
       Source:
         Type: CODEPIPELINE
         BuildSpec: buildspec.yaml
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/standard:4.0
+        EnvironmentVariables:
+          - Name: SAM_BUCKET
+            Type: PLAINTEXT
+            Value: !Ref ArtifactBucket
+  IntegrationTest:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ProjectName}-PostDeploy-Test
+      ServiceRole: !Ref PipelineServiceRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.test.yaml
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Type: LINUX_CONTAINER
