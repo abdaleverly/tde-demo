@@ -4,4 +4,4 @@ phases:
     runtime-versions:
       nodejs: 12
     commands:
-      - curl -s https://wks0f2rgjh.execute-api.us-east-1.amazonaws.com/Prod/hello/ | grep "Hello World!"
+      - curl -s https://wks0f2rgjh.execute-api.us-east-1.amazonaws.com/Prod/hello/ | grep "hello"
