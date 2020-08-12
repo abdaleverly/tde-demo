@@ -224,7 +224,7 @@ Resources:
             - Name: IntegrationTests
               RunOrder: 3
               InputArtifacts:
-                - Name: Source
+                - Name: SourceOutput
               ActionTypeId:
                 Category: Test
                 Provider: CodeBuild
@@ -251,6 +251,7 @@ Resources:
           - Name: SAM_BUCKET
             Type: PLAINTEXT
             Value: !Ref ArtifactBucket
+
   IntegrationTest:
     Type: AWS::CodeBuild::Project
     Properties:
