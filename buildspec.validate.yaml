@@ -4,8 +4,9 @@ phases:
     commands:
       - env
   pre_build:
-    - BRANCH_NAME=$(echo ${CODEBUILD_WEBHOOK_HEAD_REF#"refs/heads/"})
-    - echo ${BRANCH_NAME}
+    commands:
+      - BRANCH_NAME=$(echo ${CODEBUILD_WEBHOOK_HEAD_REF#"refs/heads/"})
+      - echo ${BRANCH_NAME}
 
   build:
     commands:
