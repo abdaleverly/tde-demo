@@ -1,0 +1,8 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - env
+      - curl https://wks0f2rgjh.execute-api.us-east-1.amazonaws.com/Prod/hello/
