@@ -1,0 +1,20 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - env
+
+  build:
+    commands:
+      - |
+        case "${CODEBUILD_WEBHOOK_EVENT}" in
+          PULL_REQUEST_CREATED | PULL_REQUEST_UPDATED)
+            echo "sam deploy --arguments"
+            ;;
+          PULL_REQUEST_MERGED)
+            echo "sam destroy --arguments"
+            ;;
+          *)
+            echo "Do not recognize this event: ${CODEBUILD_WEBHOOK_EVENT}"
+            ;;
+        esac
