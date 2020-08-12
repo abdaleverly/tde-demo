@@ -1,0 +1,26 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - env
+  pre_build:
+    commands:
+      - BRANCH_NAME=$(echo ${CODEBUILD_WEBHOOK_HEAD_REF#"refs/heads/"})
+      - echo ${BRANCH_NAME}
+
+  build:
+    commands:
+      - |
+        case "${CODEBUILD_WEBHOOK_EVENT}" in
+          PULL_REQUEST_CREATED | PULL_REQUEST_UPDATED)
+            echo "sam deploy --template-file template.yaml --s3-bucket name get-from-secrets --s3-prefix ${BRANCH_NAME}"
+            echo "aws secretsmanager create-secret --name ${CODEBUILD_WEBHOOK_HEAD_REF} --description foobar --secret-string file://samconfig.toml"
+            echo "run integration test"
+            ;;
+          PULL_REQUEST_MERGED)
+            echo "aws cloudformation delete-stack --stack-name stack-from-secrets-manager"
+            ;;
+          *)
+            echo "Do not recognize this event: ${CODEBUILD_WEBHOOK_EVENT}"
+            ;;
+        esac

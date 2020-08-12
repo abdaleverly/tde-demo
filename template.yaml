@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   tde-app
 
-  Sample SAM Template for tde-app
+  Sample SAM Template for tde-app. New Branch
   
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
